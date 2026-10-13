@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 355
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: code
 
@@ -42,7 +42,7 @@ jobs:
           || { git init --quiet store && git -C store checkout --quiet --orphan "$DATA_BRANCH" \
                && git -C store remote add origin "$URL"; }
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
