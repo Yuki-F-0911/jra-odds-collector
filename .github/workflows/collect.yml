@@ -1,0 +1,58 @@
+name: collect
+
+# 定期実行は遅延・間引きが大きいので、起動のきっかけを朝に何度か用意し、
+# 1回のジョブが最大約5時間40分ループする。残りがあれば自分で後継ジョブを起動する。
+# 同時に動くのは concurrency で1本だけ（余分な起動は待機中に置き換えられ、開始しても即終了する）。
+on:
+  schedule:
+    - cron: "*/20 21-23 * * *"  # JST 6:00-8:40
+    - cron: "17 0-7 * * *"      # JST 9:17-16:17（朝の起動がすべて遅れた場合の保険）
+  workflow_dispatch:
+    inputs:
+      race_date:
+        description: "YYYY-MM-DD（空なら今日・JST）"
+        required: false
+        default: ""
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  TZ: Asia/Tokyo
+  DATA_BRANCH: data
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code
+
+      - name: Checkout data branch
+        run: |
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git clone --quiet --depth 1 --branch "$DATA_BRANCH" "$URL" store \
+          || { git init --quiet store && git -C store checkout --quiet --orphan "$DATA_BRANCH" \
+               && git -C store remote add origin "$URL"; }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect odds
+        id: loop
+        working-directory: code
+        run: python -u -m collector.loop --race-date "${{ inputs.race_date }}" --store ../store --max-minutes 340
+
+      - name: Start successor
+        if: steps.loop.outputs.more == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run collect.yml --repo "${{ github.repository }}" -f race_date="${{ inputs.race_date }}"
