@@ -1,0 +1,150 @@
+{
+ "schedule": [
+  {
+   "yahoo_race_id": "2608050501",
+   "track_id": "京都",
+   "race_number": 1,
+   "post_time": "10:00"
+  },
+  {
+   "yahoo_race_id": "2608050502",
+   "track_id": "京都",
+   "race_number": 2,
+   "post_time": "10:30"
+  },
+  {
+   "yahoo_race_id": "2608050503",
+   "track_id": "京都",
+   "race_number": 3,
+   "post_time": "11:00"
+  },
+  {
+   "yahoo_race_id": "2608050504",
+   "track_id": "京都",
+   "race_number": 4,
+   "post_time": "11:30"
+  },
+  {
+   "yahoo_race_id": "2608050505",
+   "track_id": "京都",
+   "race_number": 5,
+   "post_time": "12:20"
+  },
+  {
+   "yahoo_race_id": "2608050506",
+   "track_id": "京都",
+   "race_number": 6,
+   "post_time": "12:55"
+  },
+  {
+   "yahoo_race_id": "2608050507",
+   "track_id": "京都",
+   "race_number": 7,
+   "post_time": "13:25"
+  },
+  {
+   "yahoo_race_id": "2608050508",
+   "track_id": "京都",
+   "race_number": 8,
+   "post_time": "13:55"
+  },
+  {
+   "yahoo_race_id": "2608050509",
+   "track_id": "京都",
+   "race_number": 9,
+   "post_time": "14:25"
+  },
+  {
+   "yahoo_race_id": "2608050510",
+   "track_id": "京都",
+   "race_number": 10,
+   "post_time": "15:00"
+  },
+  {
+   "yahoo_race_id": "2608050511",
+   "track_id": "京都",
+   "race_number": 11,
+   "post_time": "15:40"
+  },
+  {
+   "yahoo_race_id": "2608050512",
+   "track_id": "京都",
+   "race_number": 12,
+   "post_time": "16:20"
+  },
+  {
+   "yahoo_race_id": "2603030501",
+   "track_id": "福島",
+   "race_number": 1,
+   "post_time": "09:45"
+  },
+  {
+   "yahoo_race_id": "2603030502",
+   "track_id": "福島",
+   "race_number": 2,
+   "post_time": "10:15"
+  },
+  {
+   "yahoo_race_id": "2603030503",
+   "track_id": "福島",
+   "race_number": 3,
+   "post_time": "10:45"
+  },
+  {
+   "yahoo_race_id": "2603030504",
+   "track_id": "福島",
+   "race_number": 4,
+   "post_time": "11:15"
+  },
+  {
+   "yahoo_race_id": "2603030505",
+   "track_id": "福島",
+   "race_number": 5,
+   "post_time": "12:05"
+  },
+  {
+   "yahoo_race_id": "2603030506",
+   "track_id": "福島",
+   "race_number": 6,
+   "post_time": "12:40"
+  },
+  {
+   "yahoo_race_id": "2603030507",
+   "track_id": "福島",
+   "race_number": 7,
+   "post_time": "13:10"
+  },
+  {
+   "yahoo_race_id": "2603030508",
+   "track_id": "福島",
+   "race_number": 8,
+   "post_time": "13:40"
+  },
+  {
+   "yahoo_race_id": "2603030509",
+   "track_id": "福島",
+   "race_number": 9,
+   "post_time": "14:10"
+  },
+  {
+   "yahoo_race_id": "2603030510",
+   "track_id": "福島",
+   "race_number": 10,
+   "post_time": "14:45"
+  },
+  {
+   "yahoo_race_id": "2603030511",
+   "track_id": "福島",
+   "race_number": 11,
+   "post_time": "15:20"
+  },
+  {
+   "yahoo_race_id": "2603030512",
+   "track_id": "福島",
+   "race_number": 12,
+   "post_time": "15:55"
+  }
+ ],
+ "finalized": [],
+ "last_capture": {}
+}
