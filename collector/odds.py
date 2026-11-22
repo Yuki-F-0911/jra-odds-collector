@@ -1,9 +1,9 @@
 """JRA開催日程とYahoo!競馬のオッズページを取得・解析する（標準ライブラリのみ）。
 
-出力CSV（縦持ち）の列:
+出力CSV（縦持ち）の列（bet_type は 単勝・複勝・ワイド・馬連・3連複）:
     snapshot_at, race_date, track_id, race_number, yahoo_race_id, post_time,
     odds_status, odds_updated_at, bet_type, combination, horse_name, odds_low, odds_high
-単勝は odds_low == odds_high。
+単勝・馬連・3連複は odds_low == odds_high。
 """
 
 from __future__ import annotations
@@ -176,7 +176,44 @@ def parse_wide_odds(page_html: str) -> list[OddsRecord]:
     return records
 
 
-PAGES = {"win_place": ("tfw", parse_win_place_odds), "wide": ("wide", parse_wide_odds)}
+def parse_umaren_odds(page_html: str) -> list[OddsRecord]:
+    """馬連。表の見出しが1頭目、各行が2頭目。"""
+    records: list[OddsRecord] = []
+    for table in re.findall(r"<table[^>]*hr-tableLeftTop--oddsW[^>]*>(.*?)</table>", page_html, re.S):
+        first_match = re.search(r'<thead>.*?scope="col"[^>]*>\s*(\d+)\s*<', table, re.S)
+        if first_match is None:
+            continue
+        first = int(first_match.group(1))
+        for second, cell in re.findall(r'scope="row">\s*(\d+)\s*</th>\s*<td[^>]*>(.*?)</td>', table, re.S):
+            values = _span_floats(cell)
+            if len(values) == 1:
+                pair = sorted((first, int(second)))
+                records.append(OddsRecord("馬連", f"{pair[0]}-{pair[1]}", "", values[0], values[0]))
+    return records
+
+
+def parse_trio_odds(page_html: str) -> list[OddsRecord]:
+    """3連複。表の見出しが「1頭目－2頭目」、各行が3頭目。"""
+    records: list[OddsRecord] = []
+    for table in re.findall(r"<table[^>]*hr-tableLeftTop--oddsW[^>]*>(.*?)</table>", page_html, re.S):
+        head = re.search(r'<thead>.*?scope="col"[^>]*>\s*(\d+)\s*[－\-]\s*(\d+)\s*<', table, re.S)
+        if head is None:
+            continue
+        first, second = int(head.group(1)), int(head.group(2))
+        for third, cell in re.findall(r'scope="row">\s*(\d+)\s*</th>\s*<td[^>]*>(.*?)</td>', table, re.S):
+            values = _span_floats(cell)
+            if len(values) == 1:
+                trio = sorted((first, second, int(third)))
+                records.append(OddsRecord("3連複", f"{trio[0]}-{trio[1]}-{trio[2]}", "", values[0], values[0]))
+    return records
+
+
+PAGES = {
+    "win_place": ("tfw", parse_win_place_odds),
+    "wide": ("wide", parse_wide_odds),
+    "umaren": ("ur", parse_umaren_odds),
+    "trio": ("sf", parse_trio_odds),
+}
 
 
 def snapshot_race(race: ScheduledRace, *, race_date: date, bet_types: list[str]) -> tuple[list[dict[str, object]], bool]:

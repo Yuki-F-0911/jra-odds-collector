@@ -25,6 +25,9 @@ GIVE_UP_AFTER_POST_MIN = 60  # 確定オッズが出ないまま発走からこ�
 FIRST_CAPTURE_BEFORE_MIN = 150  # 最初のレースのこの分前から取り始める
 PUSH_INTERVAL_SEC = 300
 TICK_SEC = 15
+# 組合せが多い券種は取得回数を絞る。発走までの残り分の区切りごとに1回ずつ（最初の区切りより前は朝の1回）。
+# 18頭で馬連153・3連複816通りあり、毎回取るとデータが数倍になるため。
+SPARSE_WINDOWS = {"umaren": [90, 60, 30, 15, 10, 5, 2], "trio": [30, 10, 4]}
 
 
 def interval_minutes(minutes_to_post: float) -> float:
@@ -34,6 +37,30 @@ def interval_minutes(minutes_to_post: float) -> float:
         if minutes_to_post <= upper:
             return interval
     return INTERVALS[-1][1]
+
+
+def sparse_window(bet_type: str, minutes_to_post: float) -> str | None:
+    """その時点が属する区切りの名前。発走後は取らない（None）。"""
+    if minutes_to_post <= 0:
+        return None
+    windows = SPARSE_WINDOWS[bet_type]
+    inside = [w for w in windows if minutes_to_post <= w]
+    return f"le{min(inside)}" if inside else "early"
+
+
+def bet_types_for(race: ScheduledRace, bet_types: list[str], state: dict, minutes_to_post: float) -> list[str]:
+    """今回取る券種。間引き対象は区切りごとに1回だけ取り、取った区切りを state に記録する。"""
+    done = state.setdefault("sparse_done", {}).setdefault(race.yahoo_race_id, {})
+    chosen = []
+    for bet_type in bet_types:
+        if bet_type not in SPARSE_WINDOWS:
+            chosen.append(bet_type)
+            continue
+        window = sparse_window(bet_type, minutes_to_post)
+        if window is not None and window not in done.get(bet_type, []):
+            chosen.append(bet_type)
+            done.setdefault(bet_type, []).append(window)
+    return chosen
 
 
 def due_races(schedule: list[ScheduledRace], state: dict, *, race_date: date, now: datetime) -> list[ScheduledRace]:
@@ -86,7 +113,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="開催日のオッズを発走時刻に合わせて取り続ける")
     parser.add_argument("--race-date", default="", help="YYYY-MM-DD（省略時は今日）")
     parser.add_argument("--store", default="store", help="データブランチを置いたディレクトリ")
-    parser.add_argument("--bet-types", default="win_place,wide")
+    parser.add_argument("--bet-types", default="win_place,wide,umaren,trio")
     parser.add_argument("--max-minutes", type=float, default=340, help="この分数で打ち切る（ジョブ上限6時間より短く）")
     parser.add_argument("--no-push", action="store_true", help="git に保存しない（手元での確認用）")
     args = parser.parse_args()
@@ -132,14 +159,15 @@ def main() -> None:
         for race in due_races(schedule, state, race_date=race_date, now=now):
             if time.monotonic() > deadline:
                 break
-            rows, finalized = snapshot_race(race, race_date=race_date, bet_types=bet_types)
+            minutes_to_post = (race.post_at(race_date) - now).total_seconds() / 60
+            types_now = bet_types_for(race, bet_types, state, minutes_to_post)
+            rows, finalized = snapshot_race(race, race_date=race_date, bet_types=types_now)
             append_rows(output, rows)
             state["last_capture"][race.yahoo_race_id] = datetime.now().isoformat(timespec="seconds")
             if finalized:
                 state["finalized"] = sorted(set(state["finalized"]) | {race.yahoo_race_id})
-            minutes_to_post = (race.post_at(race_date) - now).total_seconds() / 60
             print(f"{now:%H:%M:%S} {race.track_id}{race.race_number}R post={race.post_time} "
-                  f"mtp={minutes_to_post:.0f} rows={len(rows)} final={finalized}", flush=True)
+                  f"mtp={minutes_to_post:.0f} types={','.join(types_now)} rows={len(rows)} final={finalized}", flush=True)
         state_path.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
         if not args.no_push and time.monotonic() - last_push >= PUSH_INTERVAL_SEC:
             git_push(store, f"odds {race_date} {datetime.now():%H:%M}")
